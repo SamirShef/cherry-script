@@ -6,7 +6,12 @@ pub enum OpCode {
     IMul = 4,
     IDiv = 5,
     IRem = 6,
-    Print = 7,
+    FAdd = 7,
+    FSub = 8,
+    FMul = 9,
+    FDiv = 10,
+    FRem = 11,
+    Print = 12,
 }
 
 impl OpCode {
@@ -19,7 +24,12 @@ impl OpCode {
             4 => Some(OpCode::IMul),
             5 => Some(OpCode::IDiv),
             6 => Some(OpCode::IRem),
-            7 => Some(OpCode::Print),
+            7 => Some(OpCode::FAdd),
+            8 => Some(OpCode::FSub),
+            9 => Some(OpCode::FMul),
+            10 => Some(OpCode::FDiv),
+            11 => Some(OpCode::FRem),
+            12 => Some(OpCode::Print),
             _ => None
         }
     }

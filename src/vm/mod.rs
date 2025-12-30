@@ -1,30 +1,25 @@
 pub mod opcodes;
 use opcodes::OpCode;
 
-#[derive(Debug, Clone, Copy)]
-pub enum StackSlotVariant {
-    Int,
-    Float
+#[derive(Debug, Clone)]
+pub enum StackSlot {
+    Int(i64),
+    Float(f64)
 }
 
-pub union StackSlotData {
-    pub ival: i64,
-    pub fval: f64
-}
+impl StackSlot {
+    fn as_i64(&self) -> Option<i64> {
+        match self {
+            StackSlot::Int(val) => Some(*val),
+            _ => None
+        }
+    }
 
-pub struct StackSlot {
-    pub data: StackSlotData,
-    pub variant: StackSlotVariant
-}
-
-impl Clone for StackSlot {
-    fn clone(&self) -> Self {
-        let new_union = match self.variant {
-            StackSlotVariant::Int => StackSlotData { ival: unsafe { self.data.ival } },
-            StackSlotVariant::Float => StackSlotData { fval: unsafe { self.data.fval } }
-        };
-
-        return StackSlot { data: new_union, variant: self.variant };
+    fn as_f64(&self) -> Option<f64> {
+        match self {
+            StackSlot::Float(val) => Some(*val),
+            _ => None
+        }
     }
 }
 
@@ -73,39 +68,66 @@ impl VM {
                     self.bc_pos += 1;
                     let rhs = self.pop();
                     let lhs = self.pop();
-                    self.push(StackSlot { variant: StackSlotVariant::Int, data: StackSlotData { ival: unsafe { lhs.data.ival + rhs.data.ival } }});
+                    self.push(StackSlot::Int(lhs.as_i64().unwrap() + rhs.as_i64().unwrap()));
                 }
                 Some(OpCode::ISub) => {
                     self.bc_pos += 1;
                     let rhs = self.pop();
                     let lhs = self.pop();
-                    self.push(StackSlot { variant: StackSlotVariant::Int, data: StackSlotData { ival: unsafe { lhs.data.ival - rhs.data.ival } }});
+                    self.push(StackSlot::Int(lhs.as_i64().unwrap() - rhs.as_i64().unwrap()));
                 }
                 Some(OpCode::IMul) => {
                     self.bc_pos += 1;
                     let rhs = self.pop();
                     let lhs = self.pop();
-                    self.push(StackSlot { variant: StackSlotVariant::Int, data: StackSlotData { ival: unsafe { lhs.data.ival * rhs.data.ival } }});
+                    self.push(StackSlot::Int(lhs.as_i64().unwrap() * rhs.as_i64().unwrap()));
                 }
                 Some(OpCode::IDiv) => {
                     self.bc_pos += 1;
                     let rhs = self.pop();
                     let lhs = self.pop();
-                    self.push(StackSlot { variant: StackSlotVariant::Int, data: StackSlotData { ival: unsafe { lhs.data.ival / rhs.data.ival } }});
+                    self.push(StackSlot::Int(lhs.as_i64().unwrap() / rhs.as_i64().unwrap()));
                 }
                 Some(OpCode::IRem) => {
                     self.bc_pos += 1;
                     let rhs = self.pop();
                     let lhs = self.pop();
-                    self.push(StackSlot { variant: StackSlotVariant::Int, data: StackSlotData { ival: unsafe { lhs.data.ival % rhs.data.ival } }});
+                    self.push(StackSlot::Int(lhs.as_i64().unwrap() % rhs.as_i64().unwrap()));
+                }
+                Some(OpCode::FAdd) => {
+                    self.bc_pos += 1;
+                    let rhs = self.pop();
+                    let lhs = self.pop();
+                    self.push(StackSlot::Float(lhs.as_f64().unwrap() + rhs.as_f64().unwrap()));
+                }
+                Some(OpCode::FSub) => {
+                    self.bc_pos += 1;
+                    let rhs = self.pop();
+                    let lhs = self.pop();
+                    self.push(StackSlot::Float(lhs.as_f64().unwrap() - rhs.as_f64().unwrap()));
+                }
+                Some(OpCode::FMul) => {
+                    self.bc_pos += 1;
+                    let rhs = self.pop();
+                    let lhs = self.pop();
+                    self.push(StackSlot::Float(lhs.as_f64().unwrap() * rhs.as_f64().unwrap()));
+                }
+                Some(OpCode::FDiv) => {
+                    self.bc_pos += 1;
+                    let rhs = self.pop();
+                    let lhs = self.pop();
+                    self.push(StackSlot::Float(lhs.as_f64().unwrap() / rhs.as_f64().unwrap()));
+                }
+                Some(OpCode::FRem) => {
+                    self.bc_pos += 1;
+                    let rhs = self.pop();
+                    let lhs = self.pop();
+                    self.push(StackSlot::Float(lhs.as_f64().unwrap() % rhs.as_f64().unwrap()));
                 }
                 Some(OpCode::Print) => {
                     self.bc_pos += 1;
                     let val = self.pop();
-                    match val.variant {
-                        StackSlotVariant::Int => unsafe { println!("{}", val.data.ival); }
-                        StackSlotVariant::Float => unsafe { println!("{}", val.data.fval); }
-                    }
+                    println!("{:?}", val)
                 }
                 _ => { break; }
             }
