@@ -27,12 +27,13 @@ pub struct VM {
     constants: Vec<StackSlot>,
     evaluated_stack: Vec<StackSlot>,
     bytecode: Vec<u8>,
-    bc_pos: usize
+    bc_pos: usize,
+    globals: Vec<Option<StackSlot>>
 }
 
 impl VM {
     pub fn new() -> Self {
-        Self{constants: Vec::new(), evaluated_stack: Vec::new(), bytecode: Vec::new(), bc_pos: 0}
+        Self { constants: Vec::new(), evaluated_stack: Vec::new(), bytecode: Vec::new(), bc_pos: 0, globals: Vec::new() }
     }
 
     pub fn emit_byte(&mut self, byte: u8) {
@@ -54,6 +55,31 @@ impl VM {
 
     pub fn pop(&mut self) -> StackSlot {
         return self.evaluated_stack.pop().unwrap();
+    }
+
+    pub fn create_global(&mut self) -> usize {
+        self.globals.push(None);
+        return self.globals.len() - 1;
+    }
+
+    pub fn store_global(&mut self, index: usize, slot: StackSlot) {
+        self.push(slot);
+        self.emit_byte(OpCode::StoreGlob as u8);
+        self.emit_byte(((index >> 16) & 0xFF) as u8);
+        self.emit_byte(((index >> 8) & 0xFF) as u8);
+        self.emit_byte((index & 0xFF) as u8);
+    }
+
+    pub fn load_global(&mut self, index: usize) {
+        self.emit_byte(OpCode::LoadGlob as u8);
+        self.emit_byte(((index >> 16) & 0xFF) as u8);
+        self.emit_byte(((index >> 8) & 0xFF) as u8);
+        self.emit_byte((index & 0xFF) as u8);
+    }
+    
+    pub fn get_global(&mut self) -> StackSlot {
+        let index = self.get_index();
+        return self.globals[index].clone().unwrap();
     }
 
     pub fn execute(&mut self) {
@@ -123,6 +149,17 @@ impl VM {
                     let rhs = self.pop();
                     let lhs = self.pop();
                     self.push(StackSlot::Float(lhs.as_f64().unwrap() % rhs.as_f64().unwrap()));
+                }
+                Some(OpCode::StoreGlob) => {
+                    self.bc_pos += 1;
+                    let val = self.pop();
+                    let index = self.get_index();
+                    self.globals[index] = Some(val);
+                }
+                Some(OpCode::LoadGlob) => {
+                    self.bc_pos += 1;
+                    let slot = self.get_global();
+                    self.push(slot);
                 }
                 Some(OpCode::Print) => {
                     self.bc_pos += 1;
