@@ -1,72 +1,17 @@
 pub mod opcodes;
 use opcodes::OpCode;
 
-#[derive(Debug, Clone)]
-pub enum StackSlot {
-    Int(i64),
-    Float(f64)
-}
+pub mod chunk;
+pub mod stack_slot;
+use stack_slot::StackSlot;
+use chunk::Chunk;
 
-impl StackSlot {
-    fn as_i64(&self) -> Option<i64> {
-        match self {
-            StackSlot::Int(val) => Some(*val),
-            _ => None
-        }
-    }
-
-    fn as_f64(&self) -> Option<f64> {
-        match self {
-            StackSlot::Float(val) => Some(*val),
-            _ => None
-        }
-    }
-}
-
-pub struct Chunk {
-    constants: Vec<StackSlot>,
-    bytecode: Vec<u8>
-}
-
-impl Chunk {
-    pub fn new() -> Self {
-        Self { constants: Vec::new(), bytecode: Vec::new() }
-    }
-    
-    pub fn emit_byte(&mut self, byte: u8) -> usize {
-        self.bytecode.push(byte);
-        return self.bytecode.len() - 1;
-    }
-
-    pub fn emit_const(&mut self, slot: StackSlot) -> usize {
-        self.constants.push(slot);
-        let index = self.constants.len() - 1;
-        let first_instruction = self.emit_byte(OpCode::Push as u8);
-        self.emit_byte(((index >> 16) & 0xFF) as u8);
-        self.emit_byte(((index >> 8) & 0xFF) as u8);
-        self.emit_byte((index & 0xFF) as u8);
-        return first_instruction;
-    }
-
-    pub fn emit_jmp(&mut self, index: u32) -> usize {
-        let first_instruction = self.emit_byte(OpCode::Jmp as u8);
-        self.emit_byte(((index >> 16) & 0xFF) as u8);
-        self.emit_byte(((index >> 8) & 0xFF) as u8);
-        self.emit_byte((index & 0xFF) as u8);
-        return first_instruction;
-    }
-
-    pub fn emit_jmp_if(&mut self, index: u32) -> usize {
-        let first_instruction = self.emit_byte(OpCode::JmpIf as u8);
-        self.emit_byte(((index >> 16) & 0xFF) as u8);
-        self.emit_byte(((index >> 8) & 0xFF) as u8);
-        self.emit_byte((index & 0xFF) as u8);
-        return first_instruction;
-    }
-}
+pub mod call_stack_slot;
+use call_stack_slot::CallStackSlot;
 
 pub struct VM {
     evaluated_stack: Vec<StackSlot>,
+    call_stack: Vec<CallStackSlot>,
     pub chunks: Vec<Chunk>,
     pub chunk_index: usize,
     bc_pos: usize,
@@ -75,7 +20,7 @@ pub struct VM {
 
 impl VM {
     pub fn new(chunks: Vec<Chunk>) -> Self {
-        Self { evaluated_stack: Vec::new(), chunks: chunks, chunk_index: 0, bc_pos: 0, globals: Vec::new() }
+        Self { evaluated_stack: Vec::new(), call_stack: Vec::new(), chunks: chunks, chunk_index: 0, bc_pos: 0, globals: Vec::new() }
     }
 
     pub fn push(&mut self, slot: StackSlot) {
@@ -84,6 +29,10 @@ impl VM {
 
     pub fn pop(&mut self) -> StackSlot {
         return self.evaluated_stack.pop().unwrap();
+    }
+
+    pub fn add_chunk(&mut self, chunk: Chunk) {
+        self.chunks.push(chunk);
     }
 
     pub fn create_global(&mut self) -> usize {
@@ -202,6 +151,19 @@ impl VM {
                     if let Some(val) = cond.as_i64() && val == 1 {
                         self.bc_pos = index;
                     }
+                }
+                Some(OpCode::Call) => {
+                    self.bc_pos += 1;
+                    let new_chunk_index = self.get_index();
+                    self.call_stack.push(CallStackSlot { bc_pos: self.bc_pos, chunk_index: self.chunk_index });
+                    self.chunk_index = new_chunk_index;
+                    self.bc_pos = 0;
+                }
+                Some(OpCode::Ret) => {
+                    self.bc_pos += 1;
+                    let call_slot = self.call_stack.pop().unwrap();
+                    self.chunk_index = call_slot.chunk_index;
+                    self.bc_pos = call_slot.bc_pos;
                 }
                 Some(OpCode::Print) => {
                     self.bc_pos += 1;
