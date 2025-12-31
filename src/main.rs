@@ -27,5 +27,8 @@ fn main() {
         }
     }
 
-    let lexer = Lexer::new(content.clone());
+    let mut  lexer = Lexer::new(content);
+    while let token = lexer.next_token() && token != None {
+        println!("{:?}", token.unwrap());
+    }
 }
