@@ -13,7 +13,9 @@ pub enum OpCode {
     FRem        = 11,
     StoreGlob   = 12,
     LoadGlob    = 13,
-    Print       = 14,
+    Jmp         = 14,
+    JmpIf       = 15,
+    Print       = 16,
 }
 
 impl OpCode {
@@ -33,7 +35,9 @@ impl OpCode {
             11  => Some(OpCode::FRem),
             12  => Some(OpCode::StoreGlob),
             13  => Some(OpCode::LoadGlob),
-            14  => Some(OpCode::Print),
+            14  => Some(OpCode::Jmp),
+            15  => Some(OpCode::JmpIf),
+            16  => Some(OpCode::Print),
             _   => None
         }
     }
