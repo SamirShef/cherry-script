@@ -39,7 +39,10 @@ impl Lexer {
             val.push(self.advance());
         }
 
-        return Token::Id(val, Location { line: tmp_l, col: tmp_c });
+        match val.as_str() {
+            "var" => Token::Var(Location { line: tmp_l, col: tmp_c }),
+            _ => Token::Id(val, Location { line: tmp_l, col: tmp_c })
+        }
     }
 
     fn tokenize_num_lit(&mut self) -> Token {
@@ -112,24 +115,30 @@ impl Lexer {
         let location = Location { line: tmp_l, col: tmp_c };
         let c = self.advance();
         match c {
-            '='                                     => Some(Token::Assign(location)),
-            '>'                                     => Some(Token::Gt(location)),
-            '>' if self.pos < self.src.len() &&
-                self.peek(1) == '='                 => { self.advance(); Some(Token::GtEq(location))},
-            '<'                                     => Some(Token::Lt(location)),
-            '<' if self.pos < self.src.len() &&
-                self.peek(1) == '='                 => { self.advance(); Some(Token::LtEq(location)) },
             '=' if self.pos < self.src.len() &&
-                self.peek(1) == '='                 => { self.advance(); Some(Token::Eq(location)) },
+                self.peek(0) == '='                 => { self.advance(); Some(Token::Eq(location)) },
+            '='                                     => Some(Token::Assign(location)),
+
+            '>' if self.pos < self.src.len() &&
+                self.peek(0) == '='                 => { self.advance(); Some(Token::GtEq(location))},
+            '>'                                     => Some(Token::Gt(location)),
+
+            '<' if self.pos < self.src.len() &&
+                self.peek(0) == '='                 => { self.advance(); Some(Token::LtEq(location)) },
+            '<'                                     => Some(Token::Lt(location)),
+
             '!' if self.pos < self.src.len() &&
-                self.peek(1) == '='                 => { self.advance(); Some(Token::NotEq(location)) },
+                self.peek(0) == '='                 => { self.advance(); Some(Token::NotEq(location)) },
             '!'                                     => Some(Token::Not(location)),
-            '&'                                     => Some(Token::And(location)),
-            '|'                                     => Some(Token::Or(Location { line: tmp_l, col: tmp_c })),
+
             '&' if self.pos < self.src.len() &&
-                self.peek(1) == '&'                 => { self.advance(); Some(Token::LogicalAnd(location)) },
+                self.peek(0) == '&'                 => { self.advance(); Some(Token::LogicalAnd(location)) },
+            '&'                                     => Some(Token::And(location)),
+
             '|' if self.pos < self.src.len() &&
-                self.peek(1) == '|'                 => { self.advance(); Some(Token::LogicalOr(location)) },
+                self.peek(0) == '|'                 => { self.advance(); Some(Token::LogicalOr(location)) },
+            '|'                                     => Some(Token::Or(Location { line: tmp_l, col: tmp_c })),
+            
             '+'                                     => Some(Token::Plus(location)),
             '-'                                     => Some(Token::Minus(location)),
             '*'                                     => Some(Token::Star(location)),
