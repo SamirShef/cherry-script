@@ -165,6 +165,18 @@ impl VM {
                     self.chunk_index = call_slot.chunk_index;
                     self.bc_pos = call_slot.bc_pos;
                 }
+                Some(OpCode::StoreLoc) => {
+                    self.bc_pos += 1;
+                    let val = self.pop();
+                    let index = self.get_index();
+                    self.chunks[self.chunk_index].locals[index] = Some(val);
+                }
+                Some(OpCode::LoadLoc) => {
+                    self.bc_pos += 1;
+                    let index = self.get_index();
+                    let slot = self.chunks[self.chunk_index].get_local(index);
+                    self.push(slot);
+                }
                 Some(OpCode::Print) => {
                     self.bc_pos += 1;
                     let val = self.pop();

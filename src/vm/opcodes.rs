@@ -17,7 +17,9 @@ pub enum OpCode {
     JmpIf       = 15,
     Call        = 16,
     Ret         = 17,
-    Print       = 18,
+    StoreLoc    = 18,
+    LoadLoc     = 19,
+    Print       = 20,
 }
 
 impl OpCode {
@@ -41,7 +43,9 @@ impl OpCode {
             15  => Some(OpCode::JmpIf),
             16  => Some(OpCode::Call),
             17  => Some(OpCode::Ret),
-            18  => Some(OpCode::Print),
+            18  => Some(OpCode::StoreLoc),
+            19  => Some(OpCode::LoadLoc),
+            20  => Some(OpCode::Print),
             _   => None
         }
     }
