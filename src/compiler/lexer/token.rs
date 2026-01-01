@@ -1,11 +1,13 @@
 use crate::compiler::location::Location;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Id(String, Location),
     
     // keywords
     Var(Location),
+    Const(Location),
+    Print(Location),
     
     // literals
     Int(i64, Location),

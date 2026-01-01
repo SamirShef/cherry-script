@@ -40,8 +40,7 @@ impl VM {
         return self.globals.len() - 1;
     }
 
-    pub fn store_global(&mut self, index: usize, slot: StackSlot) {
-        self.push(slot);
+    pub fn store_global(&mut self, index: usize) {
         self.chunks[self.chunk_index].emit_byte(OpCode::StoreGlob as u8);
         self.chunks[self.chunk_index].emit_byte(((index >> 16) & 0xFF) as u8);
         self.chunks[self.chunk_index].emit_byte(((index >> 8) & 0xFF) as u8);
@@ -69,65 +68,60 @@ impl VM {
                     let index = self.get_index();
                     self.push(self.chunks[self.chunk_index].constants[index].clone());
                 }
-                Some(OpCode::IAdd) => {
+                Some(OpCode::Add) => {
                     self.bc_pos += 1;
                     let rhs = self.pop();
                     let lhs = self.pop();
-                    self.push(StackSlot::Int(lhs.as_i64().unwrap() + rhs.as_i64().unwrap()));
+                    match (rhs, lhs) {
+                        (StackSlot::Int(a), StackSlot::Int(b)) => self.push(StackSlot::Int(a + b)),
+                        (StackSlot::Float(a), StackSlot::Int(b)) => self.push(StackSlot::Float(a + b as f64)),
+                        (StackSlot::Int(a), StackSlot::Float(b)) => self.push(StackSlot::Float(a as f64 + b)),
+                        (StackSlot::Float(a), StackSlot::Float(b)) => self.push(StackSlot::Float(a + b)),
+                    }
                 }
-                Some(OpCode::ISub) => {
+                Some(OpCode::Sub) => {
                     self.bc_pos += 1;
                     let rhs = self.pop();
                     let lhs = self.pop();
-                    self.push(StackSlot::Int(lhs.as_i64().unwrap() - rhs.as_i64().unwrap()));
+                    match (rhs, lhs) {
+                        (StackSlot::Int(a), StackSlot::Int(b)) => self.push(StackSlot::Int(a - b)),
+                        (StackSlot::Float(a), StackSlot::Int(b)) => self.push(StackSlot::Float(a - b as f64)),
+                        (StackSlot::Int(a), StackSlot::Float(b)) => self.push(StackSlot::Float(a as f64 - b)),
+                        (StackSlot::Float(a), StackSlot::Float(b)) => self.push(StackSlot::Float(a - b)),
+                    }
                 }
-                Some(OpCode::IMul) => {
+                Some(OpCode::Mul) => {
                     self.bc_pos += 1;
                     let rhs = self.pop();
                     let lhs = self.pop();
-                    self.push(StackSlot::Int(lhs.as_i64().unwrap() * rhs.as_i64().unwrap()));
+                    match (rhs, lhs) {
+                        (StackSlot::Int(a), StackSlot::Int(b)) => self.push(StackSlot::Int(a * b)),
+                        (StackSlot::Float(a), StackSlot::Int(b)) => self.push(StackSlot::Float(a * b as f64)),
+                        (StackSlot::Int(a), StackSlot::Float(b)) => self.push(StackSlot::Float(a as f64 * b)),
+                        (StackSlot::Float(a), StackSlot::Float(b)) => self.push(StackSlot::Float(a * b)),
+                    }
                 }
-                Some(OpCode::IDiv) => {
+                Some(OpCode::Div) => {
                     self.bc_pos += 1;
                     let rhs = self.pop();
                     let lhs = self.pop();
-                    self.push(StackSlot::Int(lhs.as_i64().unwrap() / rhs.as_i64().unwrap()));
+                    match (rhs, lhs) {
+                        (StackSlot::Int(a), StackSlot::Int(b)) => self.push(StackSlot::Int(a / b)),
+                        (StackSlot::Float(a), StackSlot::Int(b)) => self.push(StackSlot::Float(a / b as f64)),
+                        (StackSlot::Int(a), StackSlot::Float(b)) => self.push(StackSlot::Float(a as f64 / b)),
+                        (StackSlot::Float(a), StackSlot::Float(b)) => self.push(StackSlot::Float(a / b)),
+                    }
                 }
-                Some(OpCode::IRem) => {
+                Some(OpCode::Rem) => {
                     self.bc_pos += 1;
                     let rhs = self.pop();
                     let lhs = self.pop();
-                    self.push(StackSlot::Int(lhs.as_i64().unwrap() % rhs.as_i64().unwrap()));
-                }
-                Some(OpCode::FAdd) => {
-                    self.bc_pos += 1;
-                    let rhs = self.pop();
-                    let lhs = self.pop();
-                    self.push(StackSlot::Float(lhs.as_f64().unwrap() + rhs.as_f64().unwrap()));
-                }
-                Some(OpCode::FSub) => {
-                    self.bc_pos += 1;
-                    let rhs = self.pop();
-                    let lhs = self.pop();
-                    self.push(StackSlot::Float(lhs.as_f64().unwrap() - rhs.as_f64().unwrap()));
-                }
-                Some(OpCode::FMul) => {
-                    self.bc_pos += 1;
-                    let rhs = self.pop();
-                    let lhs = self.pop();
-                    self.push(StackSlot::Float(lhs.as_f64().unwrap() * rhs.as_f64().unwrap()));
-                }
-                Some(OpCode::FDiv) => {
-                    self.bc_pos += 1;
-                    let rhs = self.pop();
-                    let lhs = self.pop();
-                    self.push(StackSlot::Float(lhs.as_f64().unwrap() / rhs.as_f64().unwrap()));
-                }
-                Some(OpCode::FRem) => {
-                    self.bc_pos += 1;
-                    let rhs = self.pop();
-                    let lhs = self.pop();
-                    self.push(StackSlot::Float(lhs.as_f64().unwrap() % rhs.as_f64().unwrap()));
+                    match (rhs, lhs) {
+                        (StackSlot::Int(a), StackSlot::Int(b)) => self.push(StackSlot::Int(a % b)),
+                        (StackSlot::Float(a), StackSlot::Int(b)) => self.push(StackSlot::Float(a % b as f64)),
+                        (StackSlot::Int(a), StackSlot::Float(b)) => self.push(StackSlot::Float(a as f64 % b)),
+                        (StackSlot::Float(a), StackSlot::Float(b)) => self.push(StackSlot::Float(a % b)),
+                    }
                 }
                 Some(OpCode::StoreGlob) => {
                     self.bc_pos += 1;

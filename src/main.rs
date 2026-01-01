@@ -2,6 +2,7 @@ use std::io::Read;
 
 pub mod compiler;
 use compiler::lexer::Lexer;
+use compiler::parser::Parser;
 
 mod vm;
 use vm::{
@@ -27,8 +28,9 @@ fn main() {
         }
     }
 
-    let mut  lexer = Lexer::new(content);
-    while let token = lexer.next_token() && token != None {
-        println!("{:?}", token.unwrap());
-    }
+    let mut lexer = Lexer::new(content);
+    let tokens = lexer.tokenize();
+    let mut parser = Parser::new(tokens);
+    parser.generate();
+    parser.vm.execute();
 }

@@ -1,6 +1,7 @@
 use super::stack_slot::StackSlot;
 use super::OpCode;
 
+#[derive(Clone)]
 pub struct Chunk {
     pub constants: Vec<StackSlot>,
     pub bytecode: Vec<u8>,

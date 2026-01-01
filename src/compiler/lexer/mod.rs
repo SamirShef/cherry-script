@@ -15,7 +15,15 @@ impl Lexer {
         Self { src: src, pos: 0, line: 1, col: 1 }
     }
 
-    pub fn next_token(&mut self) -> Option<Token> {
+    pub fn tokenize(&mut self) -> Vec<Option<Token>> {
+        let mut tokens = Vec::new();
+        while self.pos < self.src.len() {
+            tokens.push(self.next_token());
+        }
+        return tokens;
+    }
+
+    fn next_token(&mut self) -> Option<Token> {
         while self.pos < self.src.len() && (self.peek(0) == ' ' || self.peek(0) == '\n') {
             self.advance();
         }
@@ -41,6 +49,8 @@ impl Lexer {
 
         match val.as_str() {
             "var" => Token::Var(Location { line: tmp_l, col: tmp_c }),
+            "const" => Token::Const(Location { line: tmp_l, col: tmp_c }),
+            "print" => Token::Print(Location { line: tmp_l, col: tmp_c }),
             _ => Token::Id(val, Location { line: tmp_l, col: tmp_c })
         }
     }
@@ -50,14 +60,14 @@ impl Lexer {
         let tmp_c = self.col;
         let mut val = String::new();
         let mut has_dot = false;
-        while self.pos < self.src.len() && (self.peek(0).is_digit(10) || self.peek(0) == '_') {
+        while self.pos < self.src.len() && (self.peek(0).is_digit(10) || self.peek(0) == '.' || self.peek(0) == '_') {
             if self.peek(0) == '.' {
                 if has_dot {
                     panic!("Twice dot");
                 }
                 has_dot = true;
             }
-            if self.peek(0) == '_' {
+            else if self.peek(0) == '_' {
                 continue;
             }
             val.push(self.advance());
